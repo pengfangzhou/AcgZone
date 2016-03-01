@@ -51,6 +51,7 @@ class IndexHandler(ApiHandler):
               core_zone_channels AS b WHERE a.id=b.zone_id AND b.channel_id=%s", (channel, ))
             zone_dict = {}
             record = {}
+            print "home.py res: ",res
             if res:
                 for r in res:
                     zid, zoneid, domain, maxnum, status, index = r
@@ -79,7 +80,11 @@ class IndexHandler(ApiHandler):
                                              notices=notice_dict, title=D.ZONENAME.get(str(zoneid), ''))
 
                     if self.has_arg('access_token'):
+                        print "home.py zoneid: ",zoneid
+                        print "home.py access_token: ",self.arg('access_token')
                         idcard = yield self.redis.get('zone:%s:%s' % (zoneid, self.arg('access_token')))
+
+                        print "idcard:",idcard
                         if idcard:
                             record[zoneid] = idcard
                 # if rec:
