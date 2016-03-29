@@ -2,6 +2,7 @@
 
 import time
 import zlib
+import uuid
 import random
 import pickle
 import datetime
@@ -16,6 +17,7 @@ from front.wiapi import *
 from front.handlers.base import ApiHandler, ApiJSONEncoder
 # os.environ['DJANGO_SETTINGS_MODULE'] = 'back.settings'
 from filebrowser.base import FileObject
+from twisted.python import log
 
 class HomeHandler(ApiHandler):
 
@@ -43,15 +45,17 @@ class IndexHandler(ApiHandler):
             if channels:
                 channel, = channels[0]
             else:
-                raise web.HTTPError(404)
+                raise web.HTTPError(404,'channel not find in DB.')
         else:
-            raise web.HTTPError('400', 'Argument error')
+            raise web.HTTPError('400', 'Argument error. not find channel!')
+
         if channel:
+            #通过core_zone_channels里的channel_id拿到zoneid列表，得到zoneid列表每一个zoneid对应的信息
             res = yield self.sql.runQuery("SELECT a.id, a.zoneid, a.domain, a.maxnum, a.status, a.index FROM core_zone AS a,\
               core_zone_channels AS b WHERE a.id=b.zone_id AND b.channel_id=%s", (channel, ))
             zone_dict = {}
             record = {}
-            print "home.py res: ",res
+            # print "home.py res: ",res
             if res:
                 for r in res:
                     zid, zoneid, domain, maxnum, status, index = r
@@ -80,11 +84,8 @@ class IndexHandler(ApiHandler):
                                              notices=notice_dict, title=D.ZONENAME.get(str(zoneid), ''))
 
                     if self.has_arg('access_token'):
-                        print "home.py zoneid: ",zoneid
-                        print "home.py access_token: ",self.arg('access_token')
                         idcard = yield self.redis.get('zone:%s:%s' % (zoneid, self.arg('access_token')))
 
-                        print "idcard:",idcard
                         if idcard:
                             record[zoneid] = idcard
                 # if rec:
@@ -95,7 +96,7 @@ class IndexHandler(ApiHandler):
             reb = zlib.compress(escape.json_encode(ret))
             self.write(ret)
         else:
-            raise web.HTTPError(404)
+            raise web.HTTPError(404,'channel not find in DB.')
 
 @handler
 class UpdateHandler(ApiHandler):
@@ -117,7 +118,8 @@ class UpdateHandler(ApiHandler):
         if channels:
             channel, nversion, mversion, uversion = channels[0]
         else:
-            raise web.HTTPError(404)
+            raise web.HTTPError(404,'Channel not find in DB core_channel.')
+        #确定最大版本号应该使用哪一列
         if version.split('.')[0] == nversion.split('.')[0]:
             max_version = nversion
         elif version.split('.')[0] == mversion.split('.')[0]:
@@ -161,6 +163,7 @@ class UpdateHandler(ApiHandler):
                 self.write(ret)
                 return 
 
+    #启用get，post弃用
     @storage.databaseSafe
     @defer.inlineCallbacks
     @api('Update', '/update/', [
@@ -326,3 +329,122 @@ class FlushdbHandler(ApiHandler):
         self.write("START...\r\n")
         self.redis.flushdb()
         self.write("FLUSHDB SUCCESS")
+
+@handler
+class RegisterMemberHandler(ApiHandler):
+
+    @storage.databaseSafe
+    @defer.inlineCallbacks
+    @api('Member Register', '/user/register/', [
+        Param('username', True, str, 'zhanghao', 'zhanghao', 'nickname'),
+        Param('password', True, str, '123', '123', 'password'),
+        Param('channel', False, str, 'putaogame', 'putaogame', 'channel'),
+        Param('realChannel', False, str, 'putaogame', 'putaogame', 'realChannel'),
+        Param('client_id', False, str, 'id', 'id', 'client_id'),
+        Param('client_secret', False, str, 'secret', 'secret', 'client_secret'),
+        Param('source', False, str, 'tv', 'tv', 'source'),
+        Param('t', False, str, '123456', '123456', 't'),
+        Param('udid', False, str, 'udid', 'udid', 'udid'),
+        ], filters=[ps_filter], description="Member Register")
+    def post(self):
+        # username = "myu"
+        # username = yield username
+        # self.write("ok")
+        try:
+            #必须参数
+            username = self.get_argument("username")
+            password = self.get_argument("password")
+            # print "username:",username
+            # print "password:",password
+        except Exception:
+            raise web.HTTPError(400, "Argument error")
+        try:
+            #非必须参数
+            channel = self.get_argument("channel")
+            realChannel = self.get_argument("realChannel")
+            client_id = self.get_argument("client_id")
+            client_secret = self.get_argument("client_secret")
+            source = self.get_argument("source")
+            t = self.get_argument("t")
+            udid = self.get_argument("udid")
+        except Exception:
+            print "no extra params info when register"
+            channel = '0'
+            realChannel = '0'
+            client_id = '0'
+            client_secret = '0'
+            source = '0'
+            t = '0'
+            udid = '0'
+        if username==None or username=='':
+            web.HTTPError(400, 'username is empty')
+
+        res = yield self.sql.runQuery("SELECT memberid, username, password FROM core_member WHERE username=%s LIMIT 1", (username, ))
+        if not res:
+            authstring = uuid.uuid4().hex
+            # print "authstring:",authstring
+            fronttime = t
+            phone = '0'
+            model = '0'
+            serial = '0'
+            created = int(time.time())
+            updated = created
+            ip = self.request.remote_ip
+            #msg len<= 200
+            # print len(msg)
+            msg ='r'
+            query = "INSERT INTO core_member(username,password,clientid,clientsecret,channel,realchannel,authstring,udid,source,phone,model,serial,ip,msg,fronttime,created,updated,question,answer) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING authstring;"
+            params = (username,password,client_id,client_secret,channel,realChannel,authstring,udid,source,phone,model,serial,ip,msg,fronttime,created,updated,'','')
+            # print "query:",query
+            # print "params:",params
+            for i in range(5):
+                try:
+                    sql = yield self.sql.runQuery(query,params)
+                    # print "execute ok"
+                    break
+                except storage.IntegrityError:
+                    log.msg("SQL integrity error, retry(%i): %s" % (i, (query % params)))
+                    sql = None
+                    continue
+            if sql:
+                authstring = sql[0][0]
+                self.write(dict(access_token=authstring))
+            else:
+                raise web.HTTPError(500, 'Create member failed')
+        else:
+            raise web.HTTPError(400, 'user exist, please try another username')
+
+@handler
+class LoginHandler(ApiHandler):
+    @storage.databaseSafe
+    @defer.inlineCallbacks
+    @api('Member Login', '/user/login/', [
+        Param('username', True, str, 'zhanghao', 'zhanghao', 'nickname'),
+        Param('password', True, str, '123', '123', 'password'),
+        Param('channel', False, str, 'putaogame', 'putaogame', 'channel'),
+        Param('realChannel', False, str, 'putaogame', 'putaogame', 'realChannel'),
+        Param('client_id', False, str, 'id', 'id', 'client_id'),
+        Param('client_secret', False, str, 'secret', 'secret', 'client_secret'),
+        Param('source', False, str, 'tv', 'tv', 'source'),
+        Param('t', False, str, '123456', '123456', 't'),
+        Param('udid', False, str, 'udid', 'udid', 'udid'),
+        ], filters=[ps_filter], description="Member Login")
+    def post(self):
+        try:
+            username = self.get_argument("username")
+            password = self.get_argument("password")
+        except Exception:
+            raise web.HTTPError(400, "Argument error")
+        res = yield self.sql.runQuery("SELECT username,password,authstring FROM core_member WHERE username=%s LIMIT 1", (username, ))
+        if not res:
+            raise web.HTTPError(401, "User does not exist")
+        else:
+            duname,dpwd,dauthstring = res[0]
+            if password == dpwd:
+                # print "dauthstring:",dauthstring
+                self.write(dict(access_token=dauthstring))
+            else:
+                raise web.HTTPError(401, "Password error, Try Again.")
+
+
+

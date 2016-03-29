@@ -10,6 +10,28 @@ from django.db.models.signals import post_save, post_delete
 from django.core.exceptions import ValidationError
 from filebrowser.fields import FileBrowseField, FileObject
 
+class Member(models.Model):
+    memberid = models.AutoField(primary_key=True)
+    username = models.CharField(_('Username'), max_length=50, unique=True)
+    password = models.CharField(_('Password'), max_length=200,)
+    clientid = models.CharField(_('Clientid'), max_length=100, blank=True)
+    clientsecret = models.CharField(_('Clientsecret'), max_length=100, blank=True)
+    channel = models.CharField(_('Channel'), max_length=100, blank=True)
+    realchannel = models.CharField(_('Realchannel'), max_length=100, blank=True)
+    udid = models.CharField(_('Udid'), max_length=100, blank=True)
+    authstring = models.CharField(_('Authstring'), max_length=200, blank=True)
+    source = models.CharField(_('Source'), max_length=50, blank=True)
+    phone = models.CharField(_('Phone'), max_length=100, blank=True)
+    model = models.CharField(_('Model'), max_length=200, blank=True)
+    serial = models.CharField(_('Serial'), max_length=200, blank=True)
+    ip = models.CharField(_('Ip'), max_length=100, blank=True)
+    msg = models.CharField(_('Msg'), max_length=300, blank=True)
+    fronttime = models.CharField(_('Fronttime'), max_length=200, blank=True)
+    created = models.PositiveIntegerField(_('Created'), default=0)
+    updated = models.PositiveIntegerField(_('Updated'), default=0)
+    question = models.CharField(_('Question'), max_length=200, blank=True)
+    answer = models.CharField(_('Answer'), max_length=200, blank=True)
+
 class Zone(models.Model):
     FULL = 0
     NEWAREA = 1

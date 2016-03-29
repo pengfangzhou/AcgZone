@@ -1,0 +1,24 @@
+1 增加一个表，用于用户注册。Member
+ps:msg不能超过长度200
+DROP TABLE IF EXISTS "public"."core_member";
+CREATE TABLE "public"."core_member" (
+	"memberid" serial NOT NULL PRIMARY KEY,
+	"username" varchar(50) UNIQUE NOT NULL COLLATE "default",
+	"password" varchar(200),
+	"clientid" varchar(100),
+	"clientsecret" varchar(100),
+	"channel" varchar(100),
+	"realchannel" varchar(100),
+	"authstring" varchar(200) UNIQUE NOT NULL COLLATE "default",
+	"udid" varchar(100),
+	"source" varchar(50),
+	"phone" varchar(100),
+	"model" varchar(200),
+	"serial" varchar(200),
+	"ip" varchar(100),
+	"msg" varchar(300),
+	"fronttime" varchar(100),
+	"created" int4,
+	"updated" int4
+)
+WITH (OIDS=FALSE);
