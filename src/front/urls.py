@@ -22,7 +22,6 @@ url_patterns = [
     (r'/gm/account/edit/', gmaccount.EditHandler),
     (r'/gm/prod/edit/', gmprod.EditProdHandler),
 
-
     (r'/crossdomain\.xml', home.CrossdomainHandler),
     (r'/crossdomain\.xml', cyclone.web.RedirectHandler,
      {'url': '/static/crossdmain.xml'}),

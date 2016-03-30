@@ -161,60 +161,7 @@ class UpdateHandler(ApiHandler):
                 ret = dict(code=0, timestamp=int(time.time())) 
                 reb = zlib.compress(escape.json_encode(ret)) 
                 self.write(ret)
-                return 
-
-    #启用get，post弃用
-    @storage.databaseSafe
-    @defer.inlineCallbacks
-    @api('Update', '/update/', [
-        Param('channel', True, str, 'putaogame', 'putaogame', 'channel'),
-        Param('version', True, str, 'v1.1', 'v1.1', 'version'),
-    ], filters=[ps_filter], description="Update")
-    def post(self):
-        try:
-            channel = self.get_argument('channel', 'putaogame')
-            version = str(self.get_argument('version'))
-        except Exception:
-            raise web.HTTPError(400, 'Argument error')
-
-        channels = yield self.sql.runQuery("SELECT id, version FROM core_channel WHERE slug=%s LIMIT 1", (channel, ))
-        if channels:
-            channel, max_version= channels[0]
-            
-        else:
-            raise web.HTTPError(404)
-        
-        if cmp(version, max_version) == 0:
-            ret = dict(code=0, timestamp=int(time.time())) 
-            reb = zlib.compress(escape.json_encode(ret)) 
-            self.write(ret)
-            return 
-        FIND = False  
-        res = yield self.sql.runQuery("SELECT cversion, tversion, url, sign FROM core_update WHERE channel_id=%s", (channel, ))
-        if res: 
-            for r in res:
-                if version == str(r[0]) and max_version == str(r[1]):
-                    FIND = True
-                    code, target, url, md5 = 1, r[1], r[2], r[3]
-                    ret = dict(code=code, msg='', targetVersion=target, upgrade=url, md5=md5, timestamp=int(time.time()))
-                    reb = zlib.compress(escape.json_encode(ret))
-                    self.write(ret)
-                    return  
-                else:continue
-        if not FIND:
-            res = yield self.sql.runQuery("SELECT version, url, md5 FROM core_upgrade WHERE channel_id=%s ORDER BY version DESC LIMIT 1", (channel, ))
-            if res: 
-                for r in res:
-                    code, target, url, md5 = -1, r[0], r[1] or '', r[2] or ''
-                    ret = dict(code=code, msg='', targetVersion=target, upgrade=url, md5=md5, timestamp=int(time.time()))  
-                    reb = zlib.compress(escape.json_encode(ret))
-                    self.write(ret)
-                    return
-            else:
-                ret = dict(code=0, timestamp=int(time.time())) 
-                reb = zlib.compress(escape.json_encode(ret)) 
-                self.write(ret)
-                return 
+                return
 
 @handler
 class BindHandler(ApiHandler):
@@ -377,7 +324,7 @@ class RegisterMemberHandler(ApiHandler):
             t = '0'
             udid = '0'
         if username==None or username=='':
-            web.HTTPError(400, 'username is empty')
+            web.HTTPError(401, 'username is empty')
 
         res = yield self.sql.runQuery("SELECT memberid, username, password FROM core_member WHERE username=%s LIMIT 1", (username, ))
         if not res:
@@ -386,7 +333,7 @@ class RegisterMemberHandler(ApiHandler):
             fronttime = t
             phone = '0'
             model = '0'
-            serial = '0'
+            serial = '1'
             created = int(time.time())
             updated = created
             ip = self.request.remote_ip
@@ -415,7 +362,7 @@ class RegisterMemberHandler(ApiHandler):
             raise web.HTTPError(400, 'user exist, please try another username')
 
 @handler
-class LoginHandler(ApiHandler):
+class LoginMemberHandler(ApiHandler):
     @storage.databaseSafe
     @defer.inlineCallbacks
     @api('Member Login', '/user/login/', [
@@ -446,5 +393,125 @@ class LoginHandler(ApiHandler):
             else:
                 raise web.HTTPError(401, "Password error, Try Again.")
 
+@handler
+class QuickRegisterMemberHandler(ApiHandler):
+    @storage.databaseSafe
+    @defer.inlineCallbacks
+    @api('Member Quick Register', '/user/create/', [
+        Param('channel', False, str, 'putaogame', 'putaogame', 'channel'),
+        Param('realChannel', False, str, 'putaogame', 'putaogame', 'realChannel'),
+        Param('client_id', False, str, 'id', 'id', 'client_id'),
+        Param('client_secret', False, str, 'secret', 'secret', 'client_secret'),
+        Param('source', False, str, 'tv', 'tv', 'source'),
+        Param('t', False, str, '123456', '123456', 't'),
+        Param('udid', False, str, 'udid', 'udid', 'udid'),
+        ], filters=[ps_filter], description="Member Register")
+    def post(self):
+        try:
+            #非必须参数
+            channel = self.get_argument("channel")
+            realChannel = self.get_argument("realChannel")
+            client_id = self.get_argument("client_id")
+            client_secret = self.get_argument("client_secret")
+            source = self.get_argument("source")
+            t = self.get_argument("t")
+            udid = self.get_argument("udid")
+        except Exception:
+            print "no extra params info when register"
+            channel = '0'
+            realChannel = '0'
+            client_id = '0'
+            client_secret = '0'
+            source = '0'
+            t = '0'
+            udid = '0'
 
+        authstring = uuid.uuid4().hex
+        username = authstring
+        password = ""
+        # print "authstring:",authstring
+        fronttime = t
+        phone = '0'
+        model = '0'
+        serial = '0'
+        created = int(time.time())
+        updated = created
+        ip = self.request.remote_ip
+        #msg len<= 200
+        # print len(msg)
+        msg ='q'
+
+        query = "INSERT INTO core_member(username,password,clientid,clientsecret,channel,realchannel,authstring,udid,source,phone,model,serial,ip,msg,fronttime,created,updated,question,answer) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING authstring;"
+        params = (username,password,client_id,client_secret,channel,realChannel,authstring,udid,source,phone,model,serial,ip,msg,fronttime,created,updated,'','')
+         # print "query:",query
+        # print "params:",params
+        for i in range(5):
+            try:
+                sql = yield self.sql.runQuery(query,params)
+                # print "execute ok"
+                break
+            except storage.IntegrityError:
+                log.msg("SQL integrity error, retry(%i): %s" % (i, (query % params)))
+                sql = None
+                continue
+
+        if sql:
+            rauthstring = authstring
+            self.write(dict(access_token=rauthstring))
+        else:
+            raise web.HTTPError(500, 'Create member failed')
+
+@handler
+class BindMemberHandler(ApiHandler):
+    @storage.databaseSafe
+    @defer.inlineCallbacks
+    @api('Member Login', '/user/bind/', [
+        Param('username', True, str, 'zhanghao', 'zhanghao', 'nickname'),
+        Param('password', True, str, '123', '123', 'password'),
+        Param('access_token', True, str, '123', '123', 'password'),
+        Param('channel', False, str, 'putaogame', 'putaogame', 'channel'),
+        Param('realChannel', False, str, 'putaogame', 'putaogame', 'realChannel'),
+        Param('client_id', False, str, 'id', 'id', 'client_id'),
+        Param('client_secret', False, str, 'secret', 'secret', 'client_secret'),
+        Param('source', False, str, 'tv', 'tv', 'source'),
+        Param('t', False, str, '123456', '123456', 't'),
+        Param('udid', False, str, 'udid', 'udid', 'udid'),
+        ], filters=[ps_filter], description="Member Login")
+    def post(self):
+        try:
+            username = self.get_argument("username")
+            password = self.get_argument("password")
+            authstring = self.get_argument("access_token")
+        except Exception:
+            raise web.HTTPError(400, "Argument error")
+
+        if username==None or username=='':
+            web.HTTPError(401, 'username is empty')
+
+        resUsername = yield self.sql.runQuery("SELECT username FROM core_member WHERE username=%s and serial = '1' LIMIT 1", (username, ))
+        if resUsername:
+            raise web.HTTPError(401, "username is exist")
+
+        resToken = yield self.sql.runQuery("SELECT username,password,authstring,msg FROM core_member WHERE authstring=%s LIMIT 1", (authstring, ))
+        if resToken:
+            (dusername,dpassword,dauthstring,dmsg) = resToken[0];
+            #check msg
+            if len(dmsg)>200: dmsg='s'+len(dmsg.split(','))
+            updated = int(time.time())
+            dmsg = dmsg+"_b"+str(updated)
+            serial = "1"
+            #update: username,password,msg,updated
+            updateQuery = "update core_member set username=%s,password=%s,msg=%s,updated=%s,serial=%s where authstring=%s RETURNING authstring";
+            updateParams = (username,password,dmsg,updated,serial,authstring);
+            try:
+                sql = yield self.sql.runQuery(updateQuery,updateParams)
+            except storage.IntegrityError:
+                log.msg("SQL integrity error: %s" % (updateQuery % updateParams))
+                sql = None
+            if sql:
+                self.write(dict(resultmsg="success"))
+            else:
+                self.write(dict(resultmsg="fail"))
+        else:
+            raise web.HTTPError(401, "access_token is not exist")
 
