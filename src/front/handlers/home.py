@@ -119,6 +119,8 @@ class UpdateHandler(ApiHandler):
             channel, nversion, mversion, uversion = channels[0]
         else:
             raise web.HTTPError(404,'Channel not find in DB core_channel.')
+        #最大版本号需要根据请求版本号和配置版本号来确认
+        #请求版本号需要和最大版本号一致
         #确定最大版本号应该使用哪一列
         if version.split('.')[0] == nversion.split('.')[0]:
             max_version = nversion
