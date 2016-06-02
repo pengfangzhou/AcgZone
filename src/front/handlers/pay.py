@@ -25,6 +25,20 @@ from front import D
 from front.handlers.base import ApiHandler, ApiJSONEncoder
 
 @handler
+class ShafaNotifyHandler(ApiHandler):
+    @api('shafa pay notify', '/shafa/notify/', [
+        ], filters=[ps_filter], description="shafa pay notify")
+    def post(self):
+        # url = "%s/shafa/notify/" % extra1
+        # params = dict(datastr=self.get_argument('datastr'), sign=signature)
+        # respose = yield httpclient.fetch(httputil.url_concat(url, params))
+        # if respose.code != 200:
+        #     raise web.HTTPError(reponse.code)
+        params = self.request.arguments.copy()
+        print "params: ",params
+        self.write("SUCCESS")
+
+@handler
 class XmNotifyHandler(ApiHandler):
 
     @storage.databaseSafe
