@@ -51,8 +51,7 @@ class IndexHandler(ApiHandler):
 
         if channel:
             #通过core_zone_channels里的channel_id拿到zoneid列表，得到zoneid列表每一个zoneid对应的信息
-            res = yield self.sql.runQuery("SELECT a.id, a.zoneid, a.domain, a.maxnum, a.status, a.index FROM core_zone AS a,\
-              core_zone_channels AS b WHERE a.id=b.zone_id AND b.channel_id=%s", (channel, ))
+            res = yield self.sql.runQuery("SELECT a.id, a.zoneid, a.domain, a.maxnum, a.status, a.index FROM core_zone AS a")
             zone_dict = {}
             record = {}
             # print "home.py res: ",res
@@ -60,20 +59,20 @@ class IndexHandler(ApiHandler):
                 for r in res:
                     zid, zoneid, domain, maxnum, status, index = r
                     notice_dict = {}
-                    notices = yield self.sql.runQuery("SELECT notice_id, position FROM core_noticeship WHERE zone_id=%s", (zid, ))
-                    if notices:
-                        for n in notices:
-                            notices = yield self.sql.runQuery("SELECT id, title, content, screenshot, sign,\
-                              created_at FROM core_notice WHERE id=%s", (n[0], ))
-                            nid, title, content, screenshot, sign, create_at = notices[0]
-                            if screenshot and FileObject(screenshot).exists():
-                                url = FileObject(screenshot).url
-                            else:
-                                url = ''
-                            create_at = time.mktime(create_at.timetuple())
-                            position = n[1]
-                            notice_dict[nid] = dict(title=title, content=content, url=url, sign=sign, create_at=create_at,\
-                                                    position=position)
+                    # notices = yield self.sql.runQuery("SELECT notice_id, position FROM core_noticeship WHERE zone_id=%s", (zid, ))
+                    # if notices:
+                    #     for n in notices:
+                    #         notices = yield self.sql.runQuery("SELECT id, title, content, screenshot, sign,\
+                    #           created_at FROM core_notice WHERE id=%s", (n[0], ))
+                    #         nid, title, content, screenshot, sign, create_at = notices[0]
+                    #         if screenshot and FileObject(screenshot).exists():
+                    #             url = FileObject(screenshot).url
+                    #         else:
+                    #             url = ''
+                    #         create_at = time.mktime(create_at.timetuple())
+                    #         position = n[1]
+                    #         notice_dict[nid] = dict(title=title, content=content, url=url, sign=sign, create_at=create_at,\
+                    #                                 position=position)
 
                     try:
                         nownum = yield self.redis.get('zone:%s:%s' % (zoneid, datetime.datetime.now().strftime('%Y%m%d')))
