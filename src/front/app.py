@@ -40,8 +40,8 @@ def main():
     logging.getLogger('').addHandler(console)
 
     log.startLogging(sys.stdout)
-    reactor.listenTCP(8800, Application())
-    # reactor.listenTCP(80, Application())
+    # reactor.listenTCP(8800, Application())
+    reactor.listenTCP(80, Application())
     reactor.run()
 
 if __name__ == "__main__":
