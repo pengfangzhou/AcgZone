@@ -56,6 +56,7 @@ class XmNotifyHandler(ApiHandler):
         Param('signature', True, str, '121aaac22a222bbaaa2222aaaa', '121aaac22a222bbaaa2222aaaa', 'signature'),   
         ], filters=[ps_filter], description="pay notify")
     def get(self):
+        logging.info("XmNotifyHandler /xmpay/notify/ start")
         try:
             cpOrderId = self.get_argument("cpOrderId")
             orderStatus = self.get_argument("orderStatus")
@@ -65,6 +66,8 @@ class XmNotifyHandler(ApiHandler):
             cpUserInfo = self.get_argument("cpUserInfo")             
         except Exception:
             raise web.HTTPError(400, "Argument error")
+
+        logging.info("XmNotifyHandler /xmpay/notify/ cpOrderId:"+cpOrderId)
         params = self.request.arguments.copy()
         params.pop('signature')
         for x, y in params.items():
@@ -82,6 +85,7 @@ class XmNotifyHandler(ApiHandler):
         else:
             ret = dict(error_code=1525, errMsg=E.errmsg(E.ERR_SIGN))
         reb = zlib.compress(escape.json_encode(ret))
+        logging.info("XmNotifyHandler /xmpay/notify/ end.")
         self.write(ret)
 
 @handler

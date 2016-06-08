@@ -9,7 +9,7 @@ import uuid
 from cyclone import web
 import D
 import random
-
+import logging
 
 def signed(method):
     @functools.wraps(method)
@@ -857,3 +857,6 @@ class E(object):
         vip = E.vip(vrock)
         maxtimes, = [D.ARENARESETTIMES[i*2+1] for i in xrange(0, len(D.ARENARESETTIMES)/2) if vip == D.ARENARESETTIMES[i*2]]
         return maxtimes
+
+
+
