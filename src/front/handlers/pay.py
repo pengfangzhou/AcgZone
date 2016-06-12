@@ -28,7 +28,8 @@ from front.handlers.base import ApiHandler, ApiJSONEncoder
 class ShafaNotifyHandler(ApiHandler):
     #{"ptorder":"3b15e840fffe47d7892a05769265d9ea_http://localhost:8880"}
 
-    # @defer.inlineCallbacks
+    @storage.databaseSafe
+    @defer.inlineCallbacks
     @api('shafa pay notify', '/shafa/notify/', [
         # Param('order_id', False, str, '5398089c9d5b9', '5398089c9d5b9', 'order_id'),
         # Param('payment_type', False, int, 1, 1, 'payment_type'),
