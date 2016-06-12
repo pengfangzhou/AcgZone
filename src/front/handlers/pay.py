@@ -214,7 +214,7 @@ class LgNotifyHandler(ApiHandler):
             domain, = res[0] 
         if int(result_code) == 120:
             url = "%s/lgpay/notify/" % domain
-            logging.info("url:",url)
+            logging.info("/lgpay/notify/ url:",url)
 
             params = dict(serial_no=serial_no, transaction_id=transaction_id, fee=fee)
             yield httpclient.fetch(httputil.url_concat(url, params))
