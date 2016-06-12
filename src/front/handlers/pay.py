@@ -26,17 +26,47 @@ from front.handlers.base import ApiHandler, ApiJSONEncoder
 
 @handler
 class ShafaNotifyHandler(ApiHandler):
+    #{"ptorder":"3b15e840fffe47d7892a05769265d9ea_http://localhost:8880"}
+
+    # @defer.inlineCallbacks
     @api('shafa pay notify', '/shafa/notify/', [
+        Param('order_id', False, str, '5398089c9d5b9', '5398089c9d5b9', 'order_id'),
+        Param('payment_type', False, int, 1, 1, 'payment_type'),
+        Param('payment_account', False, str, 'example@qq.com', 'example@qq.com', 'payment_account'),
+        Param('payment_id', False, str, '2014061025096282', '2014061025096282', 'payment_id'),
+        Param('is_success', False, bool, True, True, 'is_success'),
+        Param('name', False, str, '一大袋钻石', '一大袋钻石', 'name'),
+        Param('price', True, str, '30.0', '30.0', 'price'),
+        Param('quantity', True, int, 1, 1, 'quantity'),
+        Param('custom_data', True, str, '{\"key1\" : \"value1\"', '{\"key1\" : \"value1\"}', 'custom_data'),
+        Param('time', True, int, 1234566555, 1234566555, 'time'),
+        Param('key', False, str, '34ksdfk4', '34ksdfk4', 'key'),
+        Param('ip', False, str, '127.0.0.1', '127.0.0.1', 'ip'),
+        Param('sign', False, str, 'sdfkk23jkskjdfkasdfa', 'sdfkk23jkskjdfkasdfa', 'sign'),
         ], filters=[ps_filter], description="shafa pay notify")
     def post(self):
-        # url = "%s/shafa/notify/" % extra1
-        # params = dict(datastr=self.get_argument('datastr'), sign=signature)
-        # respose = yield httpclient.fetch(httputil.url_concat(url, params))
-        # if respose.code != 200:
-        #     raise web.HTTPError(reponse.code)
+        logging.info("/shafa/notify/ start")
         params = self.request.arguments.copy()
-        print "params: ",params
+        logging.info(params)
+        try:
+            price = self.get_argument("price")
+            quantity = self.get_argument("quantity")
+            custom_data = self.get_argument("custom_data")
+            time = self.get_argument("time")
+        except Exception:
+            logging.error("/shafa/notify/ 获得的传入参数有误")
+            self.write("获得的传入参数有误")
+            return
+
+        logging.info("/shafa/notify/ 1 custom_data:"+custom_data)
+        custom_data_json = json.loads(custom_data)
+        ptorder = custom_data_json['ptorder']
+        app_order_id,hurl = ptorder.split('_')
+        url = "%s/shafa/notify/" % hurl
+        params = dict(app_order_id=app_order_id, price=price, quantity=quantity, time=time)
+        respose = yield httpclient.fetch(httputil.url_concat(url, params))
         self.write("SUCCESS")
+        logging.info("/shafa/notify/ end")
 
 @handler
 class XmNotifyHandler(ApiHandler):
@@ -56,7 +86,7 @@ class XmNotifyHandler(ApiHandler):
         Param('signature', True, str, '121aaac22a222bbaaa2222aaaa', '121aaac22a222bbaaa2222aaaa', 'signature'),   
         ], filters=[ps_filter], description="pay notify")
     def get(self):
-        logging.info("XmNotifyHandler /xmpay/notify/ start")
+        logging.info("/xmpay/notify/ start")
         try:
             cpOrderId = self.get_argument("cpOrderId")
             orderStatus = self.get_argument("orderStatus")
@@ -67,7 +97,6 @@ class XmNotifyHandler(ApiHandler):
         except Exception:
             raise web.HTTPError(400, "Argument error")
 
-        logging.info("XmNotifyHandler /xmpay/notify/ cpOrderId:"+cpOrderId)
         params = self.request.arguments.copy()
         params.pop('signature')
         for x, y in params.items():
@@ -85,8 +114,8 @@ class XmNotifyHandler(ApiHandler):
         else:
             ret = dict(error_code=1525, errMsg=E.errmsg(E.ERR_SIGN))
         reb = zlib.compress(escape.json_encode(ret))
-        logging.info("XmNotifyHandler /xmpay/notify/ end.")
         self.write(ret)
+        logging.info("XmNotifyHandler /xmpay/notify/ end.")
 
 @handler
 class CmNotifyHandler(ApiHandler):
@@ -96,6 +125,7 @@ class CmNotifyHandler(ApiHandler):
     @api('pay notify', '/cmpay/notify/', [  
         ], filters=[ps_filter], description="pay notify")
     def post(self):
+        logging.info("/cmpay/notify/ start")
         dom = parseString(self.request.body)  
         root = dom.firstChild 
         childs = root.childNodes
@@ -122,6 +152,7 @@ class CmNotifyHandler(ApiHandler):
         params = dict(orderId=orderId, contentId=contentId, consumeCode=consumeCode, cpid=cpid, hRet=hRet)
         yield httpclient.fetch(httputil.url_concat(url, params))
         self.write('''<?xml version="1.0" encoding="UTF-8"?> <request><hRet>0</hRet><message>Successful</message> </request>''')
+        logging.info("/cmpay/notify/ end")
 
 
 @handler
@@ -133,6 +164,7 @@ class DbNotifyHandler(ApiHandler):
         Param('sign', True, str, example='', description='sign')],
         description="Dangbei payment notify")
     def post(self):
+        logging.info("/dangbei/notify/ start")
         try:
             signature = self.get_argument("sign")
             datastr = json.loads(unquote(self.get_argument("datastr")))
@@ -143,9 +175,10 @@ class DbNotifyHandler(ApiHandler):
         url = "%s/dangbei/notify/" % extra1
         params = dict(datastr=self.get_argument('datastr'), sign=signature)
         respose = yield httpclient.fetch(httputil.url_concat(url, params))
-        if respose.code != 200:
-            raise web.HTTPError(reponse.code)
+        # if respose.code != 200:
+        #     raise web.HTTPError(reponse.code)
         self.write("success")
+        logging.info("/dangbei/notify/ end")
 
 
 @handler
@@ -160,6 +193,7 @@ class LgNotifyHandler(ApiHandler):
         Param('fee', True, int, 1, 1, 'fee'),   
         ], filters=[ps_filter], description="pay notify")
     def get(self):
+        logging.info("/lgpay/notify/ start")
         try:
             serial_no = self.get_argument("serial_no")
             transaction_id = self.get_argument("transaction_id")
@@ -176,7 +210,8 @@ class LgNotifyHandler(ApiHandler):
             yield httpclient.fetch(httputil.url_concat(url, params))
             ret = dict(serial_no=serial_no)
             reb = zlib.compress(escape.json_encode(ret))
-            self.write(ret)    
+            self.write(ret)
+            logging.info("/lgpay/lgpay/ end")
 
 @handler
 class LetvNotifyHandler(ApiHandler):
@@ -194,6 +229,7 @@ class LetvNotifyHandler(ApiHandler):
         Param('sign', True, str, '121aaac22a222bbaaa2222aaaa', '121aaac22a222bbaaa2222aaaa', 'sign'),   
         ], filters=[ps_filter], description="pay notify")
     def get(self):
+        logging.info("/letvpay/notify/ start")
         try:
             appKey = self.get_argument("appKey")
             params = self.get_argument("params")
@@ -212,4 +248,5 @@ class LetvNotifyHandler(ApiHandler):
          products=products, sign=sign)
         yield httpclient.fetch(httputil.url_concat(url, params))
         self.write("SUCCESS")
+        logging.info("/letvpay/notify/ end")
 
