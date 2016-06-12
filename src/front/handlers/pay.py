@@ -67,6 +67,7 @@ class ShafaNotifyHandler(ApiHandler):
         ptorder = custom_data_json['ptorder']
         app_order_id,hurl = ptorder.split('_')
         url = "%s/shafa/notify/" % hurl
+        print "shafa notify url:",url
         params = dict(app_order_id=app_order_id, price=price, quantity=quantity, time=time)
         respose = yield httpclient.fetch(httputil.url_concat(url, params))
         self.write("SUCCESS")
