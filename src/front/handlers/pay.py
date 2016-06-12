@@ -30,34 +30,38 @@ class ShafaNotifyHandler(ApiHandler):
 
     # @defer.inlineCallbacks
     @api('shafa pay notify', '/shafa/notify/', [
-        Param('order_id', False, str, '5398089c9d5b9', '5398089c9d5b9', 'order_id'),
-        Param('payment_type', False, int, 1, 1, 'payment_type'),
-        Param('payment_account', False, str, 'example@qq.com', 'example@qq.com', 'payment_account'),
-        Param('payment_id', False, str, '2014061025096282', '2014061025096282', 'payment_id'),
-        Param('is_success', False, bool, True, True, 'is_success'),
-        Param('name', False, str, '一大袋钻石', '一大袋钻石', 'name'),
-        Param('price', True, str, '30.0', '30.0', 'price'),
-        Param('quantity', True, int, 1, 1, 'quantity'),
-        Param('custom_data', True, str, '{\"key1\" : \"value1\"', '{\"key1\" : \"value1\"}', 'custom_data'),
-        Param('time', True, int, 1234566555, 1234566555, 'time'),
-        Param('key', False, str, '34ksdfk4', '34ksdfk4', 'key'),
-        Param('ip', False, str, '127.0.0.1', '127.0.0.1', 'ip'),
-        Param('sign', False, str, 'sdfkk23jkskjdfkasdfa', 'sdfkk23jkskjdfkasdfa', 'sign'),
+        # Param('order_id', False, str, '5398089c9d5b9', '5398089c9d5b9', 'order_id'),
+        # Param('payment_type', False, int, 1, 1, 'payment_type'),
+        # Param('payment_account', False, str, 'example@qq.com', 'example@qq.com', 'payment_account'),
+        # Param('payment_id', False, str, '2014061025096282', '2014061025096282', 'payment_id'),
+        # Param('is_success', False, bool, True, True, 'is_success'),
+        # Param('name', False, str, '一大袋钻石', '一大袋钻石', 'name'),
+        # Param('price', True, str, '30.0', '30.0', 'price'),
+        # Param('quantity', True, int, 1, 1, 'quantity'),
+        # Param('custom_data', True, str, '{\"ptorder\" : \"550ffaa33e294001ac6090354ef9ad31_http://localhost:8880\" }','{\"ptorder\" : \"550ffaa33e294001ac6090354ef9ad31_http://localhost:8880\" }', 'custom_data'),
+        # Param('time', True, int, 1234566555, 1234566555, 'time'),
+        # Param('key', False, str, '34ksdfk4', '34ksdfk4', 'key'),
+        # Param('ip', False, str, '127.0.0.1', '127.0.0.1', 'ip'),
+        # Param('sign', False, str, 'sdfkk23jkskjdfkasdfa', 'sdfkk23jkskjdfkasdfa', 'sign'),
+        Param('data', True, str, '{\"order_id\":\"575d04b7e4231\",\"payment_type\":2,\"payment_id\":\"4010232001201606127152313698\",\"payment_account\":\"oh8KLt3YcR1PnHzdtJRFy72Oqbkw\",\"is_success\":true,\"name\":\"1\\u94bb\\u77f3\\u6d4b\\u8bd5\\u7528\",\"price\":\"1.00\",\"quantity\":1,\"custom_data\":\"{\\\"ptorder\\\":\\\"null_http:\\\\\\/\\\\\\/acgzone.acg.putaoa.com\\\"}\",\"time\":1465713911,\"key\":\"57500bc7\",\"sign\":\"6d42cf64713a5e1aaaeb001566767430\"}', '{\"order_id\":\"575d04b7e4231\",\"payment_type\":2,\"payment_id\":\"4010232001201606127152313698\",\"payment_account\":\"oh8KLt3YcR1PnHzdtJRFy72Oqbkw\",\"is_success\":true,\"name\":\"1\\u94bb\\u77f3\\u6d4b\\u8bd5\\u7528\",\"price\":\"1.00\",\"quantity\":1,\"custom_data\":\"{\\\"ptorder\\\":\\\"null_http:\\\\\\/\\\\\\/acgzone.acg.putaoa.com\\\"}\",\"time\":1465713911,\"key\":\"57500bc7\",\"sign\":\"6d42cf64713a5e1aaaeb001566767430\"}', 'name'),
         ], filters=[ps_filter], description="shafa pay notify")
     def post(self):
         logging.info("/shafa/notify/ start")
         params = self.request.arguments.copy()
         logging.info(params)
         try:
-            price = self.get_argument("price")
-            quantity = self.get_argument("quantity")
-            custom_data = self.get_argument("custom_data")
-            time = self.get_argument("time")
+            data = self.get_argument("data")
         except Exception:
             logging.error("/shafa/notify/ 获得的传入参数有误")
             self.write("获得的传入参数有误")
             return
 
+        data_json = json.loads(data)
+        price = data_json['price']
+        quantity = data_json['quantity']
+        custom_data = data_json['custom_data']
+        time = data_json['time']
+        custom_data = data_json['custom_data']
         logging.info("/shafa/notify/ 1 custom_data:"+custom_data)
         custom_data_json = json.loads(custom_data)
         ptorder = custom_data_json['ptorder']
