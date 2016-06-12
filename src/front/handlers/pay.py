@@ -206,11 +206,16 @@ class LgNotifyHandler(ApiHandler):
             fee = self.get_argument("fee")           
         except Exception:
             raise web.HTTPError(400, "Argument error")
-        res = yield self.sql.runQuery("SELECT domain FROM core_zone WHERE zoneid=%s", (serial_no[10:], ))
+
+        r,zoneid = serial_no.split('_')
+        logging.info("/lgpay/notify/ zoneid:",zoneid)
+        res = yield self.sql.runQuery("SELECT domain FROM core_zone WHERE zoneid=%s", (zoneid, ))
         if res:
             domain, = res[0] 
         if int(result_code) == 120:
             url = "%s/lgpay/notify/" % domain
+            logging.info("url:",url)
+
             params = dict(serial_no=serial_no, transaction_id=transaction_id, fee=fee)
             yield httpclient.fetch(httputil.url_concat(url, params))
             ret = dict(serial_no=serial_no)
