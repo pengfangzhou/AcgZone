@@ -176,13 +176,16 @@ class DbNotifyHandler(ApiHandler):
         try:
             signature = self.get_argument("sign")
             datastr = json.loads(unquote(self.get_argument("datastr")))
-            extra1 = datastr["extra"].split("&")[1]
         except Exception:
             raise web.HTTPError(400, "Argument error")
 
-        logging.info("extra1:"+extra1)
-        url = "%s/dangbei/notify/" % extra1
-        params = dict(datastr=self.get_argument('datastr'), sign=signature)
+        app_order_id = datastr["extra"].split("&")[0]
+        hurl = datastr["extra"].split("&")[1]
+        logging.info("app_order_id:"+app_order_id)
+        logging.info("hurl:"+hurl)
+        url = "%s/dangbei/notify/" % hurl
+        # params = dict(datastr=self.get_argument('datastr'), sign=signature)
+        params = dict(app_order_id=app_order_id, price='1.0', quantity=1, time=time)
         respose = yield httpclient.fetch(httputil.url_concat(url, params))
         # if respose.code != 200:
         #     raise web.HTTPError(reponse.code)
