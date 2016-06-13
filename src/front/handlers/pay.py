@@ -171,6 +171,8 @@ class DbNotifyHandler(ApiHandler):
         description="Dangbei payment notify")
     def post(self):
         logging.info("/dangbei/notify/ start")
+        params = self.request.arguments.copy()
+        logging.info(params)
         try:
             signature = self.get_argument("sign")
             datastr = json.loads(unquote(self.get_argument("datastr")))
@@ -178,11 +180,13 @@ class DbNotifyHandler(ApiHandler):
         except Exception:
             raise web.HTTPError(400, "Argument error")
 
+        logging.info("extra1:"+extra1)
         url = "%s/dangbei/notify/" % extra1
         params = dict(datastr=self.get_argument('datastr'), sign=signature)
         respose = yield httpclient.fetch(httputil.url_concat(url, params))
         # if respose.code != 200:
         #     raise web.HTTPError(reponse.code)
+        logging.info("/dangbei/notify/ url:"+url)
         self.write("success")
         logging.info("/dangbei/notify/ end")
 
