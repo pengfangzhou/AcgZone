@@ -185,7 +185,7 @@ class DbNotifyHandler(ApiHandler):
         logging.info("hurl:"+hurl)
         url = "%s/dangbei/notify/" % hurl
         # params = dict(datastr=self.get_argument('datastr'), sign=signature)
-        params = dict(app_order_id=app_order_id, price='1.0', quantity=1, time=time)
+        params = dict(app_order_id=app_order_id, price='1.0', quantity=1, time=str(int(time.time())))
         respose = yield httpclient.fetch(httputil.url_concat(url, params))
         # if respose.code != 200:
         #     raise web.HTTPError(reponse.code)
