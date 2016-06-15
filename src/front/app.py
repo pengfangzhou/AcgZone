@@ -10,7 +10,7 @@ from front.storage import DatabaseMixin
 
 from twisted.python import log
 import logging
-
+import time
 
 handlers = [(u[0], u[1]) for u in apiurls]
 class Application(cyclone.web.Application):
@@ -24,11 +24,13 @@ class Application(cyclone.web.Application):
 def main():
     from twisted.internet import reactor
 
+    mytime = time.strftime("%Y_%m_%d_%H_%I",time.localtime(time.time()))
+    filenameUrl = "/tmp/acg_pay_zone_%s.log"%(mytime)
     # 配置日志信息
     logging.basicConfig(level=logging.DEBUG,
         format='%(message)s',
         datefmt='%m-%d %H:%M',
-        filename='/tmp/acg_pay_zone.log',
+        filename=filenameUrl,
         filemode='w')
     # 定义一个Handler打印INFO及以上级别的日志到sys.stderr
     console = logging.StreamHandler()
