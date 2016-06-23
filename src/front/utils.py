@@ -144,6 +144,18 @@ class E(object):
     ERR_DISSATISFY_MAXREFRESHES = 802
     ERR_DISSATISFY_MAXRESETS = 803
     ERR_DUPLICATE_BUY = 804
+
+    #参数有误
+    ERR_PARAM = 10001
+    #限制有误最大最小
+    ERR_LIMIT = 10002
+    #逻辑有误
+    ERR_LOGIC = 10003
+    #DB有误
+    ERR_DB = 10004
+    #redis有误
+    ERR_REDIS = 10005
+
     _errmsg = {
         ERR_UNKNOWN: u'未知错误',
         ERR_INVALID: u'非法请求',

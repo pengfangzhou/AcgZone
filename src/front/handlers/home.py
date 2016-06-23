@@ -18,6 +18,7 @@ from front.handlers.base import ApiHandler, ApiJSONEncoder
 # os.environ['DJANGO_SETTINGS_MODULE'] = 'back.settings'
 from filebrowser.base import FileObject
 from twisted.python import log
+import logging
 
 class HomeHandler(ApiHandler):
 
@@ -45,9 +46,17 @@ class IndexHandler(ApiHandler):
             if channels:
                 channel, = channels[0]
             else:
-                raise web.HTTPError(404,'channel not find in DB.')
+                # raise web.HTTPError(404,'channel not find in DB.')
+                emsg = "该渠道在记录中不存在"
+                logging.error(emsg)
+                self.write(dict(err=E.ERR_PARAM, msg=emsg))
+                return
         else:
-            raise web.HTTPError('400', 'Argument error. not find channel!')
+            emsg = "参数中不包括渠道"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
+            # raise web.HTTPError('400', 'Argument error. not find channel!')
 
         if channel:
             #通过core_zone_channels里的channel_id拿到zoneid列表，得到zoneid列表每一个zoneid对应的信息
@@ -95,7 +104,11 @@ class IndexHandler(ApiHandler):
             reb = zlib.compress(escape.json_encode(ret))
             self.write(ret)
         else:
-            raise web.HTTPError(404,'channel not find in DB.')
+            # raise web.HTTPError(404,'channel not find in DB.')
+            emsg = "渠道在记录中不存在"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
 
 @handler
 class UpdateHandler(ApiHandler):
@@ -111,13 +124,21 @@ class UpdateHandler(ApiHandler):
             channel = self.get_argument('channel', 'putaogame')
             version = str(self.get_argument('version'))
         except Exception:
-            raise web.HTTPError(400, 'Argument error')
+            # raise web.HTTPError(400, 'Argument error')
+            emsg = "传入参数有误"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
 
         channels = yield self.sql.runQuery("SELECT id, version, version2, version3 FROM core_channel WHERE slug=%s LIMIT 1", (channel, ))
         if channels:
             channel, nversion, mversion, uversion = channels[0]
         else:
-            raise web.HTTPError(404,'Channel not find in DB core_channel.')
+            # raise web.HTTPError(404,'Channel not find in DB core_channel.')
+            emsg = "渠道在记录中不存在"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
         #最大版本号需要根据请求版本号和配置版本号来确认
         #请求版本号需要和最大版本号一致
         #确定最大版本号应该使用哪一列
@@ -305,7 +326,12 @@ class RegisterMemberHandler(ApiHandler):
             # print "username:",username
             # print "password:",password
         except Exception:
-            raise web.HTTPError(400, "Argument error")
+            # raise web.HTTPError(400, "Argument error")
+            emsg = "传入参数有误"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
+
         try:
             #非必须参数
             channel = self.get_argument("channel")
@@ -358,9 +384,17 @@ class RegisterMemberHandler(ApiHandler):
                 authstring = sql[0][0]
                 self.write(dict(access_token=authstring))
             else:
-                raise web.HTTPError(500, 'Create member failed')
+                # raise web.HTTPError(500, 'Create member failed')
+                emsg = "创建账号失败,请重试。"
+                logging.error(emsg)
+                self.write(dict(err=E.ERR_DB, msg=emsg))
+                return
         else:
-            raise web.HTTPError(400, 'user exist, please try another username')
+            # raise web.HTTPError(400, 'user exist, please try another username')
+            emsg = "该账号已经存在，请使用另一个账号注册。"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
 
 @handler
 class LoginMemberHandler(ApiHandler):
@@ -382,17 +416,29 @@ class LoginMemberHandler(ApiHandler):
             username = self.get_argument("username")
             password = self.get_argument("password")
         except Exception:
-            raise web.HTTPError(400, "Argument error")
+            # raise web.HTTPError(400, "Argument error")
+            emsg = "传入的参数有误"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
         res = yield self.sql.runQuery("SELECT username,password,authstring FROM core_member WHERE username=%s LIMIT 1", (username, ))
         if not res:
-            raise web.HTTPError(401, "User does not exist")
+            # raise web.HTTPError(401, "User does not exist")
+            emsg = "账号不存在，请点击注册按钮注册该账号。"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_DB, msg=emsg))
+            return
         else:
             duname,dpwd,dauthstring = res[0]
             if password == dpwd:
                 # print "dauthstring:",dauthstring
                 self.write(dict(access_token=dauthstring))
             else:
-                raise web.HTTPError(401, "Password error, Try Again.")
+                # raise web.HTTPError(401, "Password error, Try Again.")
+                emsg = "密码输入错误，请重试。"
+                logging.error(emsg)
+                self.write(dict(err=E.ERR_DB, msg=emsg))
+                return
 
 @handler
 class QuickRegisterMemberHandler(ApiHandler):
@@ -460,7 +506,11 @@ class QuickRegisterMemberHandler(ApiHandler):
             rauthstring = authstring
             self.write(dict(access_token=rauthstring))
         else:
-            raise web.HTTPError(500, 'Create member failed')
+            # raise web.HTTPError(500, 'Create member failed')
+            emsg = "快速游戏创建信息失败，请重试或注册账号并登陆。"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_DB, msg=emsg))
+            return
 
 @handler
 class BindMemberHandler(ApiHandler):
@@ -484,14 +534,26 @@ class BindMemberHandler(ApiHandler):
             password = self.get_argument("password")
             authstring = self.get_argument("access_token")
         except Exception:
-            raise web.HTTPError(400, "Argument error")
+            # raise web.HTTPError(400, "Argument error")
+            emsg = "传入参数有误。"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
 
         if username==None or username=='':
-            web.HTTPError(401, 'username is empty')
+            # web.HTTPError(401, 'username is empty')
+            emsg = "输入的账号是空的"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_PARAM, msg=emsg))
+            return
 
         resUsername = yield self.sql.runQuery("SELECT username FROM core_member WHERE username=%s and serial = '1' LIMIT 1", (username, ))
         if resUsername:
-            raise web.HTTPError(401, "username is exist")
+            # raise web.HTTPError(401, "username is exist")
+            emsg = "该账号已经存在，请更换一个。"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_DB, msg=emsg))
+            return
 
         resToken = yield self.sql.runQuery("SELECT username,password,authstring,msg FROM core_member WHERE authstring=%s LIMIT 1", (authstring, ))
         if resToken:
@@ -514,5 +576,9 @@ class BindMemberHandler(ApiHandler):
             else:
                 self.write(dict(resultmsg="fail"))
         else:
-            raise web.HTTPError(401, "access_token is not exist")
+            # raise web.HTTPError(401, "access_token is not exist")
+            emsg = "token 不存在"
+            logging.error(emsg)
+            self.write(dict(err=E.ERR_DB, msg=emsg))
+            return
 
