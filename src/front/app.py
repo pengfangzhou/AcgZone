@@ -34,7 +34,7 @@ def main():
         filemode='w')
     # 定义一个Handler打印INFO及以上级别的日志到sys.stderr
     console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
+    console.setLevel(logging.WARNING)
     # 设置日志打印格式
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     console.setFormatter(formatter)
