@@ -112,7 +112,9 @@ class IndexHandler(ApiHandler):
 
 @handler
 class UpdateHandler(ApiHandler):
-
+    #code == 0:不变化
+    #code == 1:找到了小更新
+    #code == -1:找到了大更新
     @storage.databaseSafe
     @defer.inlineCallbacks
     @api('Update', '/update/', [

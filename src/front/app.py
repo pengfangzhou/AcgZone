@@ -27,7 +27,7 @@ def main():
     mytime = time.strftime("%Y_%m_%d_%H_%I",time.localtime(time.time()))
     filenameUrl = "/tmp/acg_pay_zone_%s.log"%(mytime)
     # 配置日志信息
-    logging.basicConfig(level=logging.DEBUG,
+    logging.basicConfig(level=logging.WARNING,
         format='%(message)s',
         datefmt='%m-%d %H:%M',
         filename=filenameUrl,
